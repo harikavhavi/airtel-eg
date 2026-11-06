@@ -1,7 +1,29 @@
-node_modules
-venv
-.venv
-dist
-build
-__pycache__
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+venv/
+.venv/
+*.egg-info/
+build/
+dist/
+
+# Environment & Secrets
 .env
+.env.*
+!.env.example
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# IDE
+.vscode/
+.idea/
+*.swp
+.DS_Store
+
+# Logs
+*.log
