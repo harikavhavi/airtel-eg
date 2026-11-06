@@ -1,0 +1,79 @@
+{
+  "nav": {
+    "advisor": "Digi Saathi",
+    "quote": "Get Quote",
+    "kyc": "KYC",
+    "tracker": "Order Tracker",
+    "partner": "Partner Portal"
+  },
+  "advisor": {
+    "title": "Digi Saathi — Your Business Advisor",
+    "subtitle": "Tell me about your business and I'll recommend the perfect Accel Business plan.",
+    "placeholder": "Type your message...",
+    "send": "Send",
+    "language_label": "Language",
+    "new_session": "New Session",
+    "bundle_title": "Recommended Bundle",
+    "monthly": "Monthly",
+    "setup": "Setup",
+    "contract": "Contract"
+  },
+  "quote": {
+    "title": "Get Your Quote",
+    "subtitle": "Select products and see instant pricing.",
+    "segment_label": "Business Segment",
+    "city_tier": "City Tier",
+    "gstin": "Have GSTIN?",
+    "employees": "Employees",
+    "sites": "Number of Sites",
+    "generate": "Generate Quote",
+    "total_monthly": "Total Monthly",
+    "total_setup": "One-time Setup",
+    "create_order": "Create Order",
+    "errors": "Eligibility Issues"
+  },
+  "kyc": {
+    "title": "KYC Verification",
+    "subtitle": "Complete your business verification to activate services.",
+    "step_consent": "Consent",
+    "step_gstin": "GSTIN",
+    "step_udyam": "Udyam",
+    "step_docs": "Documents",
+    "step_done": "Done",
+    "consent_title": "Data Privacy Consent",
+    "consent_body": "Accel Business collects your GSTIN, Udyam number, and business documents only for identity verification and service provisioning. Data is stored securely and not shared with third parties without your consent.",
+    "i_agree": "I Agree & Proceed",
+    "gstin_placeholder": "Enter GSTIN (e.g., 27AAPFU0939F1ZV)",
+    "verify": "Verify",
+    "udyam_placeholder": "Enter Udyam Number (e.g., UDYAM-MH-00-1234567)",
+    "upload_docs": "Upload Documents",
+    "upload_hint": "Supported: PNG, JPG, PDF (max 5MB each)",
+    "submit": "Submit Documents",
+    "done_title": "KYC Submitted!",
+    "done_body": "Your documents are under review. We'll notify you within 1 business day."
+  },
+  "tracker": {
+    "title": "Order Tracker",
+    "subtitle": "Track your Accel Business service activation.",
+    "placeholder": "Enter Order ID (e.g., ORD-AB12CD34)",
+    "track": "Track Order",
+    "demo_advance": "Advance (Demo)",
+    "steps_completed": "Completed",
+    "steps_remaining": "Remaining",
+    "eta": "Estimated Activation"
+  },
+  "partner": {
+    "title": "Partner Portal",
+    "subtitle": "AI-scored leads sorted by conversion propensity.",
+    "filter_all": "All Leads",
+    "filter_high": "High Priority",
+    "filter_medium": "Medium Priority",
+    "score": "Score",
+    "priority": "Priority",
+    "top_factors": "Top Factors",
+    "call_now": "Call Now",
+    "stage": "Stage Reached",
+    "spend": "Monthly Spend"
+  }
+}
+

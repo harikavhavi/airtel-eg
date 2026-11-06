@@ -1,0 +1,29 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  background: #F5F5F5;
+}
+
+.airtel-btn {
+  @apply bg-red-600 hover:bg-red-700 text-white font-semibold px-6 py-3 rounded-xl transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed;
+}
+
+.airtel-card {
+  @apply bg-white rounded-2xl shadow-md p-6 border border-gray-100;
+}
+
+.step-active {
+  @apply bg-red-600 text-white;
+}
+
+.step-done {
+  @apply bg-green-500 text-white;
+}
+
+.step-pending {
+  @apply bg-gray-200 text-gray-500;
+}
+
