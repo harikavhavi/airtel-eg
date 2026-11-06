@@ -137,3 +137,4 @@
 
 *Total demo time: 3 minutes · Prototype: fully functional · Data: 100% synthetic*  
 *YTL Hackathon 2026 · Accel Business*
+

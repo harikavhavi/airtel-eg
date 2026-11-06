@@ -100,3 +100,4 @@ User Browser ──(TLS 1.3)──► React Frontend
 
 *All data in the prototype is 100% synthetic. No real personal data was used in development or testing.*  
 *Prepared for YTL Hackathon 2026 — Accel Business Team*
+

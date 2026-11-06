@@ -43,9 +43,10 @@ export default function Advisor() {
       setMessages(prev => [...prev, { role: 'assistant', text: data.reply }])
       if (data.bundle) setBundle(data.bundle)
     } catch (e) {
+      const errText = e.response?.data?.detail || e.message || '⚠️ Connection error. Please check backend.'
       setMessages(prev => [
         ...prev,
-        { role: 'assistant', text: '⚠️ Network error. Please try again.' },
+        { role: 'assistant', text: `⚠️ ${errText}` },
       ])
     } finally {
       setLoading(false)

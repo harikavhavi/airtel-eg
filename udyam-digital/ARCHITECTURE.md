@@ -212,3 +212,4 @@ Output → Score 0–100, Priority (HIGH ≥15, MEDIUM ≥7, LOW <7)
 ---
 
 *Prepared for YTL Hackathon 2026 · Accel Business · All data synthetic*
+

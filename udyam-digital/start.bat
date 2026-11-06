@@ -16,13 +16,13 @@ start "Udyam-Backend" cmd /k "cd /d %~dp0backend && venv\Scripts\uvicorn main:ap
 echo Waiting 7 seconds for backend to warm up...
 timeout /t 7 /nobreak >nul
 
-echo [2/2] Starting React frontend on http://localhost:5173 ...
+echo [2/2] Starting React frontend on http://localhost:3000 ...
 start "Udyam-Frontend" cmd /k "cd /d %~dp0frontend && npm run dev"
 
 echo.
 echo === Both servers starting! ===
 echo   Backend API docs: http://localhost:8000/docs
-echo   Frontend App:     http://localhost:5173
+echo   Frontend App:     http://localhost:3000
 echo.
 pause
 

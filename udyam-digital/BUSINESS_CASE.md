@@ -247,3 +247,4 @@ Quote → Activate:     63%     56%    (conservative — lower than baseline)
 *All numbers sourced from the provided smb_leads.csv (5,000 records), product_catalogue.csv (25 products), and mock registries.*  
 *All assumptions are explicitly stated. Synthetic data only.*  
 *YTL Hackathon 2026 · Accel Business · Track A*
+

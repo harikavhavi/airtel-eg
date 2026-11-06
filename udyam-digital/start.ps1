@@ -1,17 +1,20 @@
-# ─────────────────────────────────────────────────────────────────────────────
-# start.ps1  —  One-click startup for Udyam Digital
-# Run from the udyam-digital\ folder
-# ─────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
+# start.ps1 - One-click startup for Udyam Digital
+# Run from the udyam-digital folder
+# -----------------------------------------------------------------------------
 
-Write-Host "=== Udyam Digital — Accel Business ===" -ForegroundColor Cyan
+Write-Host "=== Udyam Digital - Accel Business ===" -ForegroundColor Cyan
 Write-Host ""
 
-# 1. Check .env exists and has API key
-$envFile = Join-Path $PSScriptRoot "backend\.env"
+$backendDir = Join-Path $PSScriptRoot "backend"
+$frontendDir = Join-Path $PSScriptRoot "frontend"
+$envFile = Join-Path $backendDir ".env"
+
 if (-not (Test-Path $envFile)) {
-    Write-Host "[ERROR] backend\.env not found. Copy backend\.env.example → backend\.env and add your GOOGLE_API_KEY." -ForegroundColor Red
+    Write-Host "[ERROR] backend\.env not found. Copy backend\.env.example to backend\.env and add your GOOGLE_API_KEY." -ForegroundColor Red
     exit 1
 }
+
 $envContent = Get-Content $envFile -Raw
 if ($envContent -match "your_google_api_key_here") {
     Write-Host "[WARNING] GOOGLE_API_KEY is not set in backend\.env" -ForegroundColor Yellow
@@ -20,24 +23,18 @@ if ($envContent -match "your_google_api_key_here") {
     Write-Host ""
 }
 
-# 2. Start backend in a new window
 Write-Host "[1/2] Starting FastAPI backend on http://localhost:8000 ..." -ForegroundColor Green
-$backendCmd = "Set-Location '$PSScriptRoot\backend'; .\venv\Scripts\uvicorn main:app --reload --port 8000; Read-Host 'Press Enter to close'"
-Start-Process powershell -ArgumentList "-NoExit", "-Command", $backendCmd
+Start-Process cmd.exe -WorkingDirectory $backendDir -ArgumentList "/k", "venv\Scripts\uvicorn main:app --reload --port 8000"
 
-# 3. Wait for backend to warm up (model training takes ~5 seconds)
-Write-Host "      Waiting 7 seconds for backend to initialise propensity model..." -ForegroundColor DarkGray
-Start-Sleep 7
+Write-Host "      Waiting 6 seconds for backend to initialise..." -ForegroundColor DarkGray
+Start-Sleep -Seconds 6
 
-# 4. Start frontend in a new window
-Write-Host "[2/2] Starting React dev server on http://localhost:5173 ..." -ForegroundColor Green
-$frontendCmd = "Set-Location '$PSScriptRoot\frontend'; npm run dev; Read-Host 'Press Enter to close'"
-Start-Process powershell -ArgumentList "-NoExit", "-Command", $frontendCmd
+Write-Host "[2/2] Starting React dev server on http://localhost:3000 ..." -ForegroundColor Green
+Start-Process cmd.exe -WorkingDirectory $frontendDir -ArgumentList "/k", "npm run dev"
 
 Write-Host ""
-Write-Host "=== Both servers starting... ===" -ForegroundColor Cyan
+Write-Host "=== Both servers starting! ===" -ForegroundColor Cyan
 Write-Host "  Backend API:  http://localhost:8000/docs" -ForegroundColor White
-Write-Host "  Frontend App: http://localhost:5173" -ForegroundColor White
+Write-Host "  Frontend App: http://localhost:3000" -ForegroundColor White
 Write-Host ""
-Write-Host "Press Ctrl+C in each terminal to stop the servers." -ForegroundColor DarkGray
-
+Write-Host "Close the spawned command windows to stop the servers." -ForegroundColor DarkGray

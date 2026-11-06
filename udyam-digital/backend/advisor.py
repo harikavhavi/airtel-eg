@@ -36,22 +36,45 @@ Explain the recommended bundle to the owner in plain, warm language.
 Keep all replies under 80 words unless explaining a bundle.
 """
 
+# ── API models ────────────────────────────────────────────────────────────────
+class ChatRequest(BaseModel):
+    session_id: str
+    message: str
+    language: str = "en"
+
+
+class ChatResponse(BaseModel):
+    reply: str
+    session_id: str
+    bundle: dict | None = None
+    profile: dict | None = None
+
+
 # ── LLM instance (shared across sessions) ────────────────────────────────────
 _llm = None
 
 def get_llm():
     global _llm
+    api_key = os.getenv("GOOGLE_API_KEY", "").strip()
+    # Check for placeholder or invalid prefix (Google Gemini API keys start with AIzaSy)
+    if not api_key or "your_" in api_key or not api_key.startswith("AIzaSy"):
+        return None
     if _llm is None:
-        _llm = ChatGoogleGenerativeAI(
-            model="gemini-1.5-flash",
-            temperature=0.3,
-            google_api_key=os.getenv("GOOGLE_API_KEY"),
-        )
+        try:
+            _llm = ChatGoogleGenerativeAI(
+                model="gemini-1.5-flash",
+                temperature=0.3,
+                google_api_key=api_key,
+            )
+        except Exception as e:
+            print(f"[Advisor] Failed to initialize Gemini model: {e}")
+            return None
     return _llm
 
 
 # ── In-memory session store (use Redis in production) ─────────────────────────
 sessions: dict[str, list] = {}
+guided_sessions: dict[str, dict] = {}
 
 
 # ── Build bundle from profile (rules engine — no LLM) ────────────────────────
@@ -124,18 +147,125 @@ def _extract_profile(text: str) -> dict | None:
     return None
 
 
-# ── API models ────────────────────────────────────────────────────────────────
-class ChatRequest(BaseModel):
-    session_id: str
-    message: str
-    language: str = "en"
+# ── Fallback Guided Advisor (when API key is missing or invalid) ──────────────
+def run_guided_advisor(req: ChatRequest) -> ChatResponse:
+    is_hi = req.language == "hi"
+    sid = req.session_id
+    if sid not in guided_sessions:
+        guided_sessions[sid] = {
+            "step": 0,
+            "profile": {
+                "business_type": "Professional office",
+                "employee_count": 8,
+                "num_sites": 1,
+                "city": "Kochi",
+                "has_gstin": True,
+            }
+        }
 
+    state = guided_sessions[sid]
+    step = state["step"]
+    msg = req.message.strip().lower()
 
-class ChatResponse(BaseModel):
-    reply: str
-    session_id: str
-    bundle: dict | None = None
-    profile: dict | None = None
+    # Step 0: Initial greeting / business type
+    if step == 0:
+        if any(w in msg for w in ["clinic", "retail", "shop", "office", "firm", "factory", "restaurant", "store", "dental"]):
+            state["profile"]["business_type"] = req.message.strip()
+            state["step"] = 1
+            reply = (
+                "बहुत बढ़िया! आपके व्यवसाय में कितने कर्मचारी या टीम सदस्य काम करते हैं?"
+                if is_hi else
+                "Great! How many employees or staff members work at your business?"
+            )
+        else:
+            state["step"] = 1
+            reply = (
+                "नमस्ते! आप किस प्रकार का व्यवसाय चलाते हैं (जैसे क्लिनिक, खुदरा दुकान, कार्यालय, आदि)?"
+                if is_hi else
+                "Hello! What kind of business do you run (e.g. dental clinic, retail store, law office, small factory)?"
+            )
+        return ChatResponse(reply=reply, session_id=sid)
+
+    # Step 1: Employee count
+    elif step == 1:
+        nums = re.findall(r'\b\d+\b', msg)
+        if nums:
+            state["profile"]["employee_count"] = max(1, int(nums[0]))
+        else:
+            state["profile"]["business_type"] = req.message.strip()
+        state["step"] = 2
+        reply = (
+            "आपकी कितनी व्यावसायिक शाखाएं या साइटें हैं? (उदा. 1, 2, 3)"
+            if is_hi else
+            "How many business locations or sites do you currently operate?"
+        )
+        return ChatResponse(reply=reply, session_id=sid)
+
+    # Step 2: Num sites
+    elif step == 2:
+        nums = re.findall(r'\b\d+\b', msg)
+        if nums:
+            state["profile"]["num_sites"] = max(1, int(nums[0]))
+        state["step"] = 3
+        reply = (
+            "आपका व्यवसाय किस शहर में स्थित है?"
+            if is_hi else
+            "Which city is your business located in?"
+        )
+        return ChatResponse(reply=reply, session_id=sid)
+
+    # Step 3: City
+    elif step == 3:
+        state["profile"]["city"] = req.message.strip().title()
+        state["step"] = 4
+        reply = (
+            "क्या आपके पास अपने व्यवसाय के लिए GSTIN है? (हाँ / नहीं)"
+            if is_hi else
+            "Do you have a GSTIN registered for your business? (Yes / No)"
+        )
+        return ChatResponse(reply=reply, session_id=sid)
+
+    # Step 4: GSTIN & Bundle generation
+    elif step == 4:
+        has_g = any(w in msg for w in ["yes", "y", "haan", "ha", "true", "हाँ", "ha"])
+        state["profile"]["has_gstin"] = has_g
+        state["step"] = 5
+
+        bundle = build_bundle(state["profile"])
+        prof = state["profile"]
+
+        if is_hi:
+            reply = (
+                f"धन्यवाद! आपके {prof['business_type']} ({prof['city']}, {prof['employee_count']} कर्मचारी) के लिए "
+                f"हमने सबसे उपयुक्त Accel Business प्लान तैयार किया है।\n\n"
+                f"कुल मासिक शुल्क: ₹{bundle['total_monthly_inr']:,}/माह\n"
+                f"{bundle['activation_note']}\n\n"
+                "आप नीचे दिए गए बंडल कार्ड को देखकर 'View Full Quote' पर क्लिक करके आगे बढ़ सकते हैं।"
+            )
+        else:
+            reply = (
+                f"Thank you! Based on your profile for {prof['business_type']} in {prof['city']} "
+                f"with {prof['employee_count']} staff, here is your tailored Accel Business bundle.\n\n"
+                f"Total monthly plan: ₹{bundle['total_monthly_inr']:,}/month\n"
+                f"{bundle['activation_note']}\n\n"
+                "You can review your recommended items below and click 'View Full Quote' to customize or proceed to KYC."
+            )
+
+        return ChatResponse(
+            reply=reply,
+            session_id=sid,
+            bundle=bundle,
+            profile=prof,
+        )
+
+    # Step 5+: Follow-up questions
+    else:
+        bundle = build_bundle(state["profile"])
+        if is_hi:
+            reply = "यदि आपके कोई और प्रश्न हैं या आप कुछ बदलाव चाहते हैं, तो कृपया 'View Full Quote' पर क्लिक करें या हमारी टीम आपसे 2 घंटे के भीतर संपर्क करेगी।"
+        else:
+            reply = "If you'd like to adjust items or add-ons, you can toggle them in the Quote tab, or our team can assist you within 2 business hours."
+        return ChatResponse(reply=reply, session_id=sid, bundle=bundle, profile=state["profile"])
 
 
 # ── Routes ────────────────────────────────────────────────────────────────────
@@ -143,43 +273,52 @@ class ChatResponse(BaseModel):
 async def chat(req: ChatRequest):
     llm = get_llm()
 
-    if req.session_id not in sessions:
-        sessions[req.session_id] = [SystemMessage(content=SYSTEM_PROMPT)]
+    # If no LLM available (e.g. invalid or missing API key), run guided fallback
+    if llm is None:
+        return run_guided_advisor(req)
 
-    history = sessions[req.session_id]
-    lang_hint = f"[User language preference: {req.language}] " if req.language != "en" else ""
-    history.append(HumanMessage(content=f"{lang_hint}{req.message}"))
+    try:
+        if req.session_id not in sessions:
+            sessions[req.session_id] = [SystemMessage(content=SYSTEM_PROMPT)]
 
-    response = llm.invoke(history)
-    history.append(AIMessage(content=response.content))
+        history = sessions[req.session_id]
+        lang_hint = f"[User language preference: {req.language}] " if req.language != "en" else ""
+        history.append(HumanMessage(content=f"{lang_hint}{req.message}"))
 
-    # Check if LLM has emitted a profile JSON (Phase 1 complete)
-    profile = _extract_profile(response.content)
-    bundle = None
+        response = llm.invoke(history)
+        history.append(AIMessage(content=response.content))
 
-    if profile:
-        bundle = build_bundle(profile)
-        # Feed bundle back to LLM for plain-language Phase 2 explanation
-        bundle_hint = (
-            f"[BUNDLE] {json.dumps(bundle, ensure_ascii=False)}\n"
-            "Now explain this bundle to the customer in plain language. "
-            "Do NOT mention product codes. Use prices from the bundle only."
-        )
-        history.append(HumanMessage(content=bundle_hint))
-        explanation = llm.invoke(history)
-        history.append(AIMessage(content=explanation.content))
-        return ChatResponse(
-            reply=explanation.content,
-            session_id=req.session_id,
-            bundle=bundle,
-            profile=profile,
-        )
+        # Check if LLM has emitted a profile JSON (Phase 1 complete)
+        profile = _extract_profile(response.content)
+        bundle = None
 
-    return ChatResponse(reply=response.content, session_id=req.session_id)
+        if profile:
+            bundle = build_bundle(profile)
+            # Feed bundle back to LLM for plain-language Phase 2 explanation
+            bundle_hint = (
+                f"[BUNDLE] {json.dumps(bundle, ensure_ascii=False)}\n"
+                "Now explain this bundle to the customer in plain language. "
+                "Do NOT mention product codes. Use prices from the bundle only."
+            )
+            history.append(HumanMessage(content=bundle_hint))
+            explanation = llm.invoke(history)
+            history.append(AIMessage(content=explanation.content))
+            return ChatResponse(
+                reply=explanation.content,
+                session_id=req.session_id,
+                bundle=bundle,
+                profile=profile,
+            )
+
+        return ChatResponse(reply=response.content, session_id=req.session_id)
+
+    except Exception as e:
+        print(f"[Advisor] Gemini LLM error: {e}. Switching to guided local advisor.")
+        return run_guided_advisor(req)
 
 
 @router.delete("/session/{session_id}")
 async def clear_session(session_id: str):
     sessions.pop(session_id, None)
+    guided_sessions.pop(session_id, None)
     return {"status": "cleared"}
-
