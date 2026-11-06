@@ -20,3 +20,12 @@ dist-ssr/
 .idea/
 *.swp
 .DS_Store
+
+.env.*
+!.env.example
+
+# IDE
+.vscode/
+.idea/
+*.swp
+.DS_Store
